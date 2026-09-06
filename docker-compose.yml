@@ -1,0 +1,143 @@
+services:
+
+  postgres:
+    image: postgres:16
+
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+
+    healthcheck:
+      test:
+        - CMD
+        - pg_isready
+        - -U
+        - airflow
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  airflow-init:
+    image: apache/airflow:3.3.1
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    command:
+      - bash
+      - -c
+      - airflow db migrate
+
+    environment:
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+      PYTHONPATH: /opt/airflow/src
+      PIP_ADDITIONAL_REQUIREMENTS: apache-airflow-providers-fab mysql-connector-python requests python-dotenv
+
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./src:/opt/airflow/src
+      - ./.env:/opt/airflow/.env
+
+    restart: "no"
+
+
+  airflow-scheduler:
+    image: apache/airflow:3.3.1
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    command:
+      - scheduler
+
+    environment:
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+      PYTHONPATH: /opt/airflow/src
+      PIP_ADDITIONAL_REQUIREMENTS: apache-airflow-providers-fab mysql-connector-python requests python-dotenv
+
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./src:/opt/airflow/src
+      - ./.env:/opt/airflow/.env
+
+
+  airflow-dag-processor:
+    image: apache/airflow:3.3.1
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    command:
+      - dag-processor
+
+    environment:
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+      PYTHONPATH: /opt/airflow/src
+      PIP_ADDITIONAL_REQUIREMENTS: apache-airflow-providers-fab mysql-connector-python requests python-dotenv
+
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./src:/opt/airflow/src
+      - ./.env:/opt/airflow/.env
+
+
+  airflow-apiserver:
+    image: apache/airflow:3.3.1
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    command:
+      - api-server
+
+    environment:
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+      PYTHONPATH: /opt/airflow/src
+      PIP_ADDITIONAL_REQUIREMENTS: apache-airflow-providers-fab mysql-connector-python requests python-dotenv
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./src:/opt/airflow/src
+      - ./.env:/opt/airflow/.env
+
+
+networks:
+  default:
+    name: aviation-data-engineering_default
