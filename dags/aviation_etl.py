@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 
 
 @dag(
     dag_id="aviation_etl",
     start_date=datetime(2026, 8, 1),
-    schedule=None,
+    schedule="0 * * * *",
     catchup=False,
     tags=["aviation", "etl", "mysql"],
 )
