@@ -4,6 +4,8 @@ An end-to-end aviation data engineering project that extracts flight data from t
 
 The pipeline runs as an hourly batch workflow and includes SQL analytics for analyzing flight volume, destinations, airline performance, and delays.
 
+---
+
 ## 📌 Project Overview
 
 This project demonstrates a complete data engineering workflow:
@@ -31,6 +33,8 @@ AviationStack API
 ```
 
 The workflow is orchestrated using Apache Airflow and runs automatically every hour.
+
+---
 
 ## 🏗️ Architecture
 
@@ -70,6 +74,8 @@ The workflow is orchestrated using Apache Airflow and runs automatically every h
                      └──────────────────────┘
 ```
 
+---
+
 ## ⚙️ Technologies Used
 
 - **Python**
@@ -82,6 +88,8 @@ The workflow is orchestrated using Apache Airflow and runs automatically every h
 - **mysql-connector-python**
 - **python-dotenv**
 - **Git / GitHub**
+
+---
 
 ## 📂 Project Structure
 
@@ -100,11 +108,18 @@ aviation-data-engineering/
 │   ├── load_flights.py
 │   └── run_pipeline.py
 │
+├── screenshots/
+│   ├── airflow-dag-overview.png
+│   ├── airflow-dag-runs.png
+│   └── mysql-workbench-results.png
+│
 ├── .env.example
 ├── .gitignore
 ├── docker-compose.yml
 └── README.md
 ```
+
+---
 
 ## 🔄 ETL Workflow
 
@@ -167,6 +182,8 @@ The validation checks that:
 
 The DAG fails if validation does not pass.
 
+---
+
 ## ⏰ Airflow Scheduling
 
 The DAG is configured with:
@@ -184,6 +201,8 @@ Extract → Transform → Load → Validate
 ```
 
 This is an **hourly batch ETL pipeline**, not a streaming system.
+
+---
 
 ## 🗄️ MySQL Data Model
 
@@ -210,6 +229,38 @@ Important columns include:
 | `status` | Flight status |
 | `delay_minutes` | Departure delay in minutes |
 | `created_at` | Database record creation timestamp |
+
+---
+
+## 📸 Pipeline Screenshots
+
+### Airflow DAG Overview
+
+The Airflow DAG orchestrates the complete ETL workflow:
+
+```text
+Extract → Transform → Load → Validate
+```
+
+The DAG is scheduled to run hourly.
+
+![Airflow DAG Overview](screenshots/airflow-dag-overview.png)
+
+### Airflow DAG Runs
+
+The Airflow interface shows successful scheduled and manual executions of the `aviation_etl` pipeline.
+
+![Airflow DAG Runs](screenshots/airflow-dag-runs.png)
+
+### MySQL Workbench
+
+The transformed flight records are loaded into the `raw_flights` table in MySQL.
+
+The screenshot shows the SQL query and actual records returned from the database, including flight information, scheduled and actual departure times, calculated delays, status, and load timestamps.
+
+![MySQL Workbench Results](screenshots/mysql-workbench-results.png)
+
+---
 
 ## 📊 SQL Analytics
 
@@ -240,6 +291,8 @@ GROUP BY airline_code
 ORDER BY average_delay_minutes DESC;
 ```
 
+---
+
 ## 🧪 Pipeline Verification
 
 The pipeline has been tested end-to-end.
@@ -253,23 +306,18 @@ Load          ✅
 Validate      ✅
 ```
 
-The MySQL database was also verified after a successful Airflow execution.
+The MySQL database was verified after successful Airflow executions, confirming that the pipeline is loading flight records into `raw_flights`.
 
-At the latest verification:
+The screenshots above provide visual evidence of:
 
-```text
-Total records: 49
-Latest load:   2026-09-07 09:13:08
-```
+- Successful Airflow DAG execution
+- Hourly scheduling
+- ETL task orchestration
+- MySQL database output
+- Transformed flight records
+- Calculated flight delays
 
-Example recently loaded records include flights departing from `ISB` to destinations including:
-
-```text
-KDU
-SHJ
-RUH
-MCT
-```
+---
 
 ## 🔐 Configuration
 
@@ -290,12 +338,14 @@ The actual `.env` file is excluded from Git using `.gitignore`.
 
 A safe `.env.example` file is included in the repository.
 
+---
+
 ## 🚀 Running the Project
 
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Inam0217/aviation-data-engineering.git
 cd aviation-data-engineering
 ```
 
@@ -354,6 +404,8 @@ SELECT COUNT(*)
 FROM raw_flights;
 ```
 
+---
+
 ## 🛡️ Security
 
 The project follows basic credential-management practices:
@@ -364,6 +416,8 @@ The project follows basic credential-management practices:
 - `.env` is excluded from Git
 - `.env.example` contains placeholders only
 - Credentials are not hardcoded in Python source files
+
+---
 
 ## 🎯 Project Objectives
 
@@ -381,6 +435,8 @@ This project was built to demonstrate practical data engineering skills includin
 - Git version control
 - Secure environment configuration
 
+---
+
 ## 🔮 Future Improvements
 
 Potential future improvements include:
@@ -395,11 +451,15 @@ Potential future improvements include:
 - Add cloud storage / data warehouse integration
 - Add CI/CD with GitHub Actions
 
+---
+
 ## 👨‍💻 Author
 
 **Inam Ul Hassan**
 
 Data Engineering Portfolio Project
+
+---
 
 ## 📜 License
 
