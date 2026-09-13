@@ -289,14 +289,9 @@ SELECT COUNT(*) FROM raw_flights;
 
 ## 🔮 Future Improvements
 
-- Add a dedicated staging layer
-- Strengthen data-quality checks
-- Improve duplicate-record handling
-- Add automated tests
-- Add Airflow monitoring and alerting
-- Build an analytics dashboard
-- Add cloud storage or data warehouse integration
-- Add CI/CD with GitHub Actions
+- Add automated data-quality tests
+- Add Airflow failure alerts
+- Build a simple flight-delay dashboard
 
 ## 👨‍💻 Author
 
