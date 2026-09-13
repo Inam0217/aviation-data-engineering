@@ -1,26 +1,22 @@
 # ✈️ Aviation Data Engineering Pipeline
 
-An end-to-end aviation data engineering project that extracts flight data from the AviationStack API, transforms and validates the data with Python, and loads it into MySQL using an Apache Airflow-orchestrated ETL pipeline.
+An end-to-end aviation ETL pipeline that extracts flight data from the **AviationStack REST API**, transforms and validates it with **Python**, and loads it into **MySQL** through an **Apache Airflow**-orchestrated workflow.
 
-The pipeline runs as an hourly batch workflow and includes SQL analytics for analyzing flight volume, destinations, airline performance, and delays.
+The pipeline runs as an **hourly batch process** and includes SQL analytics for flight volume, destinations, airline performance, and delays.
 
----
-
-## 📌 Project Overview
-
-This project demonstrates a complete data engineering workflow:
+## 🏗️ Architecture
 
 ```text
 AviationStack API
        │
        ▼
-   EXTRACT
+    EXTRACT
        │
        ▼
    TRANSFORM
        │
        ▼
-     LOAD
+      LOAD
        │
        ▼
      MySQL
@@ -32,117 +28,43 @@ AviationStack API
  SQL ANALYTICS
 ```
 
-The workflow is orchestrated using Apache Airflow and runs automatically every hour.
-
----
-
-## 🏗️ Architecture
+Airflow orchestrates the workflow:
 
 ```text
-                     ┌──────────────────────┐
-                     │   AviationStack API  │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │   Airflow Extract    │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │ Python Transformation│
-                     │  - Clean data        │
-                     │  - Normalize codes   │
-                     │  - Calculate delays  │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │     MySQL Load       │
-                     │    raw_flights       │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │      Validation      │
-                     │   Row count check    │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │    SQL Analytics     │
-                     └──────────────────────┘
+Extract → Transform → Load → Validate
 ```
 
----
-
-## ⚙️ Technologies Used
+## 🛠️ Tech Stack
 
 - **Python**
 - **Apache Airflow 3.3.1**
 - **Docker / Docker Compose**
 - **MySQL 8**
 - **SQL**
-- **AviationStack API**
+- **AviationStack API / REST API**
 - **Requests**
 - **mysql-connector-python**
 - **python-dotenv**
 - **Git / GitHub**
 
----
-
-## 📂 Project Structure
-
-```text
-aviation-data-engineering/
-│
-├── dags/
-│   └── aviation_etl.py
-│
-├── sql/
-│   └── analytics.sql
-│
-├── src/
-│   ├── extract_flights.py
-│   ├── transform_flights.py
-│   ├── load_flights.py
-│   └── run_pipeline.py
-│
-├── screenshots/
-│   ├── airflow-dag-overview.png
-│   ├── airflow-dag-runs.png
-│   └── mysql-workbench-results.png
-│
-├── .env.example
-├── .gitignore
-├── docker-compose.yml
-└── README.md
-```
-
----
-
-## 🔄 ETL Workflow
+## 🔄 ETL Pipeline
 
 ### 1. Extract
 
-Flight data is retrieved from the AviationStack API.
-
-The current pipeline retrieves landed flights departing from Islamabad International Airport (`ISB`).
-
-The API response is processed using Python and Requests.
+Flight data is retrieved from the AviationStack API using Python and Requests. The current pipeline retrieves landed flights departing from **Islamabad International Airport (`ISB`)**.
 
 ### 2. Transform
 
 The transformation layer:
 
-- Extracts relevant flight fields
-- Normalizes airline and airport codes
-- Converts API timestamps into Python datetime values
+- Selects relevant flight fields
+- Normalizes airline, flight, and airport codes
+- Converts API timestamps to Python datetime values
 - Calculates departure delay in minutes
-- Removes records missing required flight information
+- Removes records missing required information
 - Standardizes flight status values
 
-Example transformed fields:
+Key fields include:
 
 ```text
 flight_date
@@ -160,63 +82,59 @@ delay_minutes
 
 ### 3. Load
 
-Transformed records are loaded into MySQL.
+Transformed records are loaded into the MySQL `raw_flights` table. Database credentials are supplied through environment variables rather than hardcoded in the source code.
 
-Target table:
-
-```text
-raw_flights
-```
-
-The database connection is configured through environment variables rather than hardcoded credentials.
+The load process uses `ON DUPLICATE KEY UPDATE` to update existing records when applicable.
 
 ### 4. Validate
 
-After loading the data, Airflow runs a validation task.
+After loading, Airflow validates the MySQL configuration and connection and checks that `raw_flights` contains records. The workflow fails when validation does not pass.
 
-The validation checks that:
+## ⏰ Airflow Orchestration
 
-- MySQL connection is available
-- Required database configuration exists
-- `raw_flights` contains records
-
-The DAG fails if validation does not pass.
-
----
-
-## ⏰ Airflow Scheduling
-
-The DAG is configured with:
+The DAG is named `aviation_etl` and uses the schedule:
 
 ```text
 0 * * * *
 ```
 
-This means the ETL pipeline runs **once every hour**.
+This runs the ETL pipeline **once every hour**.
 
-Each scheduled run performs:
+The workflow consists of:
 
 ```text
 Extract → Transform → Load → Validate
 ```
 
-This is an **hourly batch ETL pipeline**, not a streaming system.
+## 🐳 Docker Environment
 
----
+Docker Compose provides the Airflow environment and its PostgreSQL metadata database. DAGs and Python source files are mounted into the Airflow services, while project configuration is supplied through `.env`.
+
+Start the environment with:
+
+```bash
+docker compose up -d
+```
+
+Check services with:
+
+```bash
+docker compose ps
+```
 
 ## 🗄️ MySQL Data Model
 
-The main table is:
+Main table:
 
 ```text
 raw_flights
 ```
 
-Important columns include:
+Important columns:
 
 | Column | Description |
 |---|---|
-| `id` | Auto-incrementing record ID |
+| `id` | Record ID |
 | `flight_date` | Flight date |
 | `airline_code` | Airline IATA code |
 | `flight_number` | Flight IATA number |
@@ -228,47 +146,13 @@ Important columns include:
 | `actual_arrival` | Actual arrival time |
 | `status` | Flight status |
 | `delay_minutes` | Departure delay in minutes |
-| `created_at` | Database record creation timestamp |
-
----
-
-## 📸 Pipeline Screenshots
-
-### Airflow DAG Overview
-
-The Airflow DAG orchestrates the complete ETL workflow:
-
-```text
-Extract → Transform → Load → Validate
-```
-
-The DAG is scheduled to run hourly.
-
-![Airflow DAG Overview](screenshots/airflow-dag-overview.png)
-
-### Airflow DAG Runs
-
-The Airflow interface shows successful scheduled and manual executions of the `aviation_etl` pipeline.
-
-![Airflow DAG Runs](screenshots/airflow-dag-runs.png)
-
-### MySQL Workbench
-
-The transformed flight records are loaded into the `raw_flights` table in MySQL.
-
-The screenshot shows the SQL query and actual records returned from the database, including flight information, scheduled and actual departure times, calculated delays, status, and load timestamps.
-
-![MySQL Workbench Results](screenshots/mysql-workbench-results.png)
-
----
+| `created_at` | Record creation timestamp |
 
 ## 📊 SQL Analytics
 
-The project includes `sql/analytics.sql`.
+`sql/analytics.sql` includes queries for:
 
-The queries provide analysis such as:
-
-- Total number of flights
+- Total flight volume
 - Flights by airline
 - Flights by destination
 - Average delay by airline
@@ -277,7 +161,7 @@ The queries provide analysis such as:
 - Overall average delay
 - Most delayed flights
 - Daily flight volume
-- Airline performance summary
+- Airline performance and delayed percentage
 
 Example:
 
@@ -291,13 +175,47 @@ GROUP BY airline_code
 ORDER BY average_delay_minutes DESC;
 ```
 
----
+## 📂 Project Structure
 
-## 🧪 Pipeline Verification
+```text
+aviation-data-engineering/
+│
+├── dags/
+│   └── aviation_etl.py
+├── sql/
+│   └── analytics.sql
+├── src/
+│   ├── extract_flights.py
+│   ├── transform_flights.py
+│   ├── load_flights.py
+│   └── run_pipeline.py
+├── screenshots/
+│   ├── airflow-dag-overview.png
+│   ├── airflow-dag-runs.png
+│   └── mysql-workbench-results.png
+├── .env.example
+├── .gitignore
+├── docker-compose.yml
+└── README.md
+```
 
-The pipeline has been tested end-to-end.
+## 📸 Screenshots
 
-Successful Airflow executions have completed the complete workflow:
+### Airflow DAG Overview
+
+![Airflow DAG Overview](screenshots/airflow-dag-overview.png)
+
+### Airflow DAG Runs
+
+![Airflow DAG Runs](screenshots/airflow-dag-runs.png)
+
+### MySQL Workbench
+
+![MySQL Workbench Results](screenshots/mysql-workbench-results.png)
+
+## 🧪 Verification
+
+The pipeline has been tested end-to-end:
 
 ```text
 Extract       ✅
@@ -306,24 +224,11 @@ Load          ✅
 Validate      ✅
 ```
 
-The MySQL database was verified after successful Airflow executions, confirming that the pipeline is loading flight records into `raw_flights`.
+Successful executions have been verified through Airflow and MySQL output, including transformed flight records and calculated delays.
 
-The screenshots above provide visual evidence of:
+## 🔐 Configuration & Security
 
-- Successful Airflow DAG execution
-- Hourly scheduling
-- ETL task orchestration
-- MySQL database output
-- Transformed flight records
-- Calculated flight delays
-
----
-
-## 🔐 Configuration
-
-Sensitive credentials are stored in a local `.env` file.
-
-Example:
+Create a local `.env` file from `.env.example` and configure your credentials:
 
 ```text
 MYSQL_HOST=host.docker.internal
@@ -334,132 +239,70 @@ AVIATION_API_KEY=your_aviationstack_api_key
 AIRFLOW_JWT_SECRET=your_generated_jwt_secret
 ```
 
-The actual `.env` file is excluded from Git using `.gitignore`.
+Security practices:
 
-A safe `.env.example` file is included in the repository.
+- Credentials are stored in `.env`
+- `.env` is excluded from Git
+- `.env.example` contains placeholders only
+- API keys and passwords are not hardcoded in Python source files
 
----
+## 🚀 Run Locally
 
-## 🚀 Running the Project
-
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/Inam0217/aviation-data-engineering.git
 cd aviation-data-engineering
 ```
 
-### 2. Create the environment file
+### 2. Configure environment
 
-Copy:
-
-```text
-.env.example
-```
-
-to:
-
-```text
-.env
-```
-
-Then configure the required credentials.
+Copy `.env.example` to `.env` and add your API and MySQL credentials.
 
 ### 3. Start Airflow
-
-Run:
 
 ```bash
 docker compose up -d
 ```
 
-Check the containers:
+### 4. Run the DAG
 
-```bash
-docker compose ps
-```
-
-### 4. Check the DAG
-
-The Airflow DAG is:
-
-```text
-aviation_etl
-```
-
-The DAG runs hourly according to:
-
-```text
-0 * * * *
-```
-
-It can also be triggered manually for testing.
+Open Airflow and trigger `aviation_etl` manually or allow its hourly schedule to run.
 
 ### 5. Verify MySQL
 
-After a successful run:
-
 ```sql
-SELECT COUNT(*)
-FROM raw_flights;
+SELECT COUNT(*) FROM raw_flights;
 ```
 
----
-
-## 🛡️ Security
-
-The project follows basic credential-management practices:
-
-- API keys are stored in `.env`
-- Database passwords are stored in `.env`
-- Airflow JWT secrets are stored in `.env`
-- `.env` is excluded from Git
-- `.env.example` contains placeholders only
-- Credentials are not hardcoded in Python source files
-
----
-
-## 🎯 Project Objectives
-
-This project was built to demonstrate practical data engineering skills including:
+## 🎯 What This Project Demonstrates
 
 - API data extraction
 - Python ETL development
-- Data transformation
-- SQL and relational databases
+- Data transformation and validation
 - MySQL integration
-- Apache Airflow orchestration
+- SQL analytics
+- Apache Airflow orchestration and scheduling
 - Docker-based development
-- Data validation
-- Workflow scheduling
+- Environment-based credential management
 - Git version control
-- Secure environment configuration
-
----
 
 ## 🔮 Future Improvements
 
-Potential future improvements include:
-
 - Add a dedicated staging layer
-- Implement stronger data quality checks
+- Strengthen data-quality checks
 - Improve duplicate-record handling
-- Add historical partitioning
-- Add automated testing
+- Add automated tests
 - Add Airflow monitoring and alerting
 - Build an analytics dashboard
-- Add cloud storage / data warehouse integration
+- Add cloud storage or data warehouse integration
 - Add CI/CD with GitHub Actions
-
----
 
 ## 👨‍💻 Author
 
 **Inam Ul Hassan**
 
 Data Engineering Portfolio Project
-
----
 
 ## 📜 License
 
